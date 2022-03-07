@@ -9,6 +9,9 @@ import kotlin.concurrent.thread
 class Server(port: Int = 5903) {
 
     private var ss: ServerSocket? = null
+    companion object {
+        val clients = mutableListOf<ConnectedClient>()
+    }
 
     var port: Int = 0
         get() = field
@@ -32,18 +35,12 @@ class Server(port: Int = 5903) {
         ss?.let{
             try {
                 while(true) {
-                    val s = it.accept()
+                    clients.add(
+                        ConnectedClient(it.accept()).apply {
+                            startReceiving()
+                        }
+                    )
                     println("Новый клиент подключился")
-                    thread {
-                        val br = BufferedReader(InputStreamReader(s.getInputStream()))
-                        val data = br.readLine()
-                        println("Получено сообщение: $data")
-                        val sendData = "Привет, это сервер!"
-                        val pw = PrintWriter(s.getOutputStream())
-                        pw.println(sendData)
-                        pw.flush()
-                        s.close()
-                    }
                 }
                 it.close()
             } catch (_: Exception){
