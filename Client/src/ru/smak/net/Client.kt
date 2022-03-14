@@ -17,61 +17,24 @@ class Client(host: String = "localhost", port: Int = 5903) {
             field = value.coerceIn(1, 65535)
         }
 
-    private var socket: Socket? = null
+    private val comm: Communicator
 
     init {
         try {
-            socket = Socket(host, port)
+            comm = Communicator(Socket(host, port))
+            comm.dataParser = ::parseData
         } catch (_: Exception){
             throw ConnectionException()
         }
     }
 
     fun start(){
-        startReceiving()
-    }
-
-    fun sendData(data: String){
-        when (data){
-            "STOP" -> stop()
-        }
-        socket?.run {
-            val pw = PrintWriter(getOutputStream())
-            pw.println(data)
-            pw.flush()
-        }
-    }
-
-    private fun stop() {
         try {
-            socket?.close()
-        } catch (_: Throwable){
-        } finally {
-            socket = null
-        }
+            comm.startReceiving()
+        } catch (_: Throwable){}
     }
 
-    private fun startReceiving(){
-        socket?.run {
-            val br = BufferedReader(
-                InputStreamReader(
-                    getInputStream()
-                )
-            )
-            thread {
-                try {
-                    while (true) {
-                        val data = br.readLine()
-                        if (data.isNullOrEmpty()) throw IOException("Socket closed")
-                        parseData(data)
-                    }
-                } catch (_: Throwable){
-                }
-            }
-        }
-    }
-
-    private fun parseData(data: String?) {
+    private fun parseData(data: String) {
         println("Сервер: $data")
     }
 }
